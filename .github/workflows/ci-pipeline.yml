@@ -45,10 +45,9 @@ jobs:
 
       - name: Generate SBOM (CycloneDX)
         run: |
-          cyclonedx-py requirements \
-            --input requirements.txt \
-            --output ${{ env.EVIDENCE_DIR }}/sbom.json \
-            --format json
+          cat requirements.txt | cyclonedx-py requirements - \
+            -o ${{ env.EVIDENCE_DIR }}/sbom.json \
+            --of JSON
 
       # ── Stage 2: SAST (Static Analysis) ──────────────────────────
       - name: Run SAST scan (Bandit)
