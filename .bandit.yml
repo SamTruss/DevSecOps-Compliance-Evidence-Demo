@@ -1,0 +1,17 @@
+# Bandit SAST configuration
+# https://bandit.readthedocs.io/
+
+# Run all tests — the demo app is intentionally vulnerable,
+# so we want maximum coverage for evidence generation.
+
+# In a real project you might skip certain tests or exclude test directories:
+# skips: ['B101']  # skip assert warnings in test files
+# exclude_dirs: ['tests', 'venv']
+
+tests: []
+skips: []
+
+exclude_dirs:
+  - venv
+  - .venv
+  - evidence
