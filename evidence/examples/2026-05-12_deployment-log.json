@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "evidence_type": "deployment_audit_trail",
+    "source": "github_actions",
+    "timestamp": "2026-05-12T14:35:00Z",
+    "pipeline_run": 1847
+  },
+  "event": "deployment",
+  "environment": "production",
+  "actor": "SamTruss",
+  "commit_sha": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+  "ref": "refs/heads/main",
+  "run_id": "9876543210",
+  "run_number": "1847",
+  "repository": "SamTruss/DevSecOps-Compliance-Evidence-Demo",
+  "workflow": "ci-pipeline.yml",
+  "triggered_by": "push",
+  "associated_pr": 12,
+  "timestamp": "2026-05-12T14:35:00Z",
+  "status": "success",
+  "deployment_chain": {
+    "code_reviewed": true,
+    "ci_passed": true,
+    "scans_completed": [
+      "dependency-scan",
+      "sast-bandit",
+      "secret-scan",
+      "container-scan"
+    ],
+    "approval_verified": true,
+    "deployed_from_main": true
+  }
+}

@@ -1,0 +1,10 @@
+# Evidence Manifest — 2026-05-12T14:36:00Z
+# Pipeline Run: 1847 | Actor: SamTruss | SHA: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+#
+# To verify: cd evidence/examples && sha256sum -c MANIFEST.sha256
+
+c0a11b998647f1716883338bb4dfeff9daff48c82929d359c1c40688de633cfb  2026-05-12_change-approval.json
+57e6ff0670e404bd79d2c93b5dac0dfd795f8a2bcf3dfc59ee4f5fb88f251084  2026-05-12_dependency-scan.json
+9a23eb771435006176833ba5f2e3d790752f13338130f0ff41d590229490de89  2026-05-12_deployment-log.json
+a660913cfcc3569ec66590dab6365a02e3356e0183e18fa25f97dc4814761f0c  2026-05-12_sast-bandit.json
+a19797e00a6f21d1fbd64a5da5bb0648b0ad0733844d8c03a48502cef1d58a93  2026-05-12_secret-scan.json
