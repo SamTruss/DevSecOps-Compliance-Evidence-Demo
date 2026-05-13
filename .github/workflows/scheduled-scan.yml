@@ -28,7 +28,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install safety cyclonedx-bom
+          pip install safety cyclonedx-python
 
       - name: Create evidence directory
         run: mkdir -p ${{ env.EVIDENCE_DIR }}
@@ -36,13 +36,13 @@ jobs:
       - name: Run dependency vulnerability scan (Safety)
         continue-on-error: true
         run: |
-          safety check --json --output ${{ env.EVIDENCE_DIR }}/scheduled-dependency-scan.json || true
+          safety check --json > ${{ env.EVIDENCE_DIR }}/scheduled-dependency-scan.json || true
 
       - name: Generate SBOM (CycloneDX)
         run: |
           cyclonedx-py requirements requirements.txt \
             -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
-            --of JSON
+            -of JSON
 
       - name: Add scan metadata
         run: |
@@ -55,7 +55,7 @@ jobs:
             "run_id": "${{ github.run_id }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "next_scheduled": "next Monday 06:00 UTC",
-            "tools": ["safety", "cyclonedx-bom"],
+            "tools": ["safety", "cyclonedx-python"],
             "policy_reference": "vulnerability-management.md Section 3"
           }
           EOF
