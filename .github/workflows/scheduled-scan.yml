@@ -1,0 +1,77 @@
+name: Scheduled Dependency Scan
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Every Monday at 06:00 UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+
+env:
+  EVIDENCE_DIR: evidence/output
+
+jobs:
+  scheduled-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install scanning tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install safety cyclonedx-bom
+
+      - name: Create evidence directory
+        run: mkdir -p ${{ env.EVIDENCE_DIR }}
+
+      - name: Run dependency vulnerability scan (Safety)
+        continue-on-error: true
+        run: |
+          safety check --json --output ${{ env.EVIDENCE_DIR }}/scheduled-dependency-scan.json || true
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          cyclonedx-py requirements \
+            --input requirements.txt \
+            --output ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
+            --format json
+
+      - name: Add scan metadata
+        run: |
+          cat <<EOF > ${{ env.EVIDENCE_DIR }}/scheduled-scan-metadata.json
+          {
+            "scan_type": "scheduled_weekly",
+            "trigger": "${{ github.event_name }}",
+            "commit_sha": "${{ github.sha }}",
+            "branch": "${{ github.ref }}",
+            "run_id": "${{ github.run_id }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "next_scheduled": "next Monday 06:00 UTC",
+            "tools": ["safety", "cyclonedx-bom"],
+            "policy_reference": "vulnerability-management.md Section 3"
+          }
+          EOF
+
+      - name: Generate manifest
+        run: |
+          cd ${{ env.EVIDENCE_DIR }}
+          echo "# Scheduled Scan Manifest — $(date -u +%Y-%m-%dT%H:%M:%SZ)" > MANIFEST.sha256
+          find . -name "*.json" -type f | sort | while read -r f; do
+            sha256sum "$f" >> MANIFEST.sha256
+          done
+
+      - name: Upload scheduled scan evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduled-scan-${{ github.run_number }}
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 90
