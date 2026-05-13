@@ -1,0 +1,19 @@
+# Gitleaks configuration for DevSecOps Compliance Evidence Demo
+# https://github.com/gitleaks/gitleaks
+
+title = "DevSecOps Demo Gitleaks Config"
+
+# The demo app contains intentional hardcoded secrets.
+# In a real project you would NOT allowlist these — they exist here
+# so the scanner produces findings for evidence generation.
+
+# Example: to allowlist a known test fixture (don't do this for real secrets):
+# [allowlist]
+# description = "Allowlisted test fixtures"
+# paths = ["tests/fixtures/**"]
+
+# Use the default ruleset — it covers AWS keys, generic passwords,
+# API tokens, private keys, and more.
+
+[extend]
+# Extend the default gitleaks rules (no overrides needed for demo)
