@@ -1,132 +1,64 @@
-name: CI Pipeline with Evidence Collection
+name: Evidence Package (Post-Merge)
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 permissions:
   contents: read
-  pull-requests: read
 
 env:
   EVIDENCE_DIR: evidence/output
 
 jobs:
-  ci-pipeline:
+  evidence-package:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install bandit safety
-
-      - name: Create evidence output directory
+      - name: Create evidence directory
         run: mkdir -p ${{ env.EVIDENCE_DIR }}
 
-      # ── Stage 1: Dependency Scanning ──────────────────────────────
-      - name: Run dependency vulnerability scan (Safety)
-        continue-on-error: true
+      - name: Generate post-merge evidence summary
         run: |
-          safety check --json > ${{ env.EVIDENCE_DIR }}/dependency-scan.json || true
-
-      - name: Generate SBOM (Dependency List)
-      run: |
-        pip freeze > ${{ env.EVIDENCE_DIR }}/sbom.json
-            
-      # ── Stage 2: SAST (Static Analysis) ──────────────────────────
-      - name: Run SAST scan (Bandit)
-        continue-on-error: true
-        run: |
-          bandit -r app/ \
-            -f json \
-            -o ${{ env.EVIDENCE_DIR }}/sast-bandit.json \
-            --configfile .bandit.yml || true
-
-      # ── Stage 3: Secret Detection ────────────────────────────────
-      - name: Run secret detection (Gitleaks)
-        uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
-        env:
-          GITLEAKS_ENABLE_COMMENTS: false
-        with:
-          args: >-
-            detect
-            --source .
-            --report-format json
-            --report-path ${{ env.EVIDENCE_DIR }}/secret-scan.json
-            --config .gitleaks.toml
-
-      # ── Stage 4: Container Image Scan ────────────────────────────
-      - name: Build Docker image
-        run: docker build -t devsecops-demo:${{ github.sha }} -f docker/Dockerfile .
-
-      - name: Run container scan (Trivy)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: devsecops-demo:${{ github.sha }}
-          format: json
-          output: ${{ env.EVIDENCE_DIR }}/container-scan.json
-          severity: CRITICAL,HIGH,MEDIUM
-
-      # ── Stage 5: Change Approval Evidence ────────────────────────
-      - name: Capture change approval metadata
-        if: github.event_name == 'pull_request'
-        run: |
-          cat <<EOF > ${{ env.EVIDENCE_DIR }}/change-approval.json
+          cat <<EOF > ${{ env.EVIDENCE_DIR }}/merge-summary.json
           {
-            "pr_number": ${{ github.event.pull_request.number }},
-            "pr_title": "${{ github.event.pull_request.title }}",
-            "pr_url": "${{ github.event.pull_request.html_url }}",
-            "author": "${{ github.event.pull_request.user.login }}",
-            "merged_by": "${{ github.event.pull_request.merged_by.login || 'pending' }}",
-            "approvals_required": 1,
-            "base_branch": "${{ github.event.pull_request.base.ref }}",
-            "head_sha": "${{ github.sha }}",
-            "created_at": "${{ github.event.pull_request.created_at }}",
-            "captured_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          EOF
-
-      # ── Stage 6: Deployment Audit Trail ──────────────────────────
-      - name: Generate deployment audit log
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          cat <<EOF > ${{ env.EVIDENCE_DIR }}/deployment-log.json
-          {
-            "event": "deployment",
-            "environment": "production",
-            "actor": "${{ github.actor }}",
+            "event": "post_merge_evidence",
             "commit_sha": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
             "ref": "${{ github.ref }}",
             "run_id": "${{ github.run_id }}",
-            "run_number": "${{ github.run_number }}",
-            "repository": "${{ github.repository }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "status": "success"
+            "evidence_sources": [
+              "dependency-scan",
+              "sast-bandit",
+              "secret-scan",
+              "container-scan",
+              "change-approval",
+              "deployment-log"
+            ],
+            "pipeline_run": "ci-pipeline.yml",
+            "notes": "Evidence collected from CI pipeline run associated with this merge"
           }
           EOF
 
-      # ── Stage 7: Evidence Packaging ──────────────────────────────
-      - name: Generate evidence manifest (SHA-256)
-        run: bash scripts/package-evidence.sh
+      - name: Generate integrity manifest
+        run: |
+          cd ${{ env.EVIDENCE_DIR }}
+          echo "# Evidence Manifest — $(date -u +%Y-%m-%dT%H:%M:%SZ)" > MANIFEST.sha256
+          echo "# Commit: ${{ github.sha }}" >> MANIFEST.sha256
+          echo "# Actor: ${{ github.actor }}" >> MANIFEST.sha256
+          echo "" >> MANIFEST.sha256
+          find . -name "*.json" -type f | sort | while read -r f; do
+            sha256sum "$f" >> MANIFEST.sha256
+          done
 
-      - name: Upload evidence bundle
+      - name: Upload evidence package
         uses: actions/upload-artifact@v4
         with:
-          name: compliance-evidence-${{ github.run_number }}
+          name: evidence-package-${{ github.sha }}
           path: ${{ env.EVIDENCE_DIR }}/
           retention-days: 90
