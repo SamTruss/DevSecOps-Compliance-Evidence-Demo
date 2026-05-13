@@ -40,9 +40,8 @@ jobs:
 
       - name: Generate SBOM (CycloneDX)
         run: |
-          cyclonedx-py requirements requirements.txt \
-            -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
-            -of JSON
+          cyclonedx-bom -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
+            -F json requirements.txt
 
       - name: Add scan metadata
         run: |
