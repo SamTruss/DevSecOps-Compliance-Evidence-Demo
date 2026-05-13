@@ -40,7 +40,7 @@ jobs:
 
       - name: Generate SBOM (CycloneDX)
         run: |
-          cat requirements.txt | cyclonedx-py requirements - \
+          cyclonedx-py requirements requirements.txt \
             -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
             --of JSON
 
