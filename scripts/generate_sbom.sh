@@ -12,10 +12,9 @@ if ! command -v cyclonedx-py &>/dev/null; then
     exit 1
 fi
 
-cyclonedx-py requirements \
-    --input requirements.txt \
-    --output "$EVIDENCE_DIR/sbom.json" \
-    --format json
+cat requirements.txt | cyclonedx-py requirements - \
+    -o "$EVIDENCE_DIR/sbom.json" \
+    --of JSON
 
 echo "[+] SBOM written to $EVIDENCE_DIR/sbom.json"
 echo "[+] Component count: $(python3 -c "
