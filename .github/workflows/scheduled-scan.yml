@@ -38,9 +38,9 @@ jobs:
         run: |
           safety check --json > ${{ env.EVIDENCE_DIR }}/scheduled-dependency-scan.json || true
 
-      - name: Generate SBOM (CycloneDX)
+      - name: Generate SBOM (Dependency List)
         run: |
-          cyclonedx-bom -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json -F json requirements.txt
+          pip freeze > ${{ env.EVIDENCE_DIR }}/sbom.json
 
       - name: Add scan metadata
         run: |
