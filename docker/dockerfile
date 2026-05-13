@@ -1,0 +1,18 @@
+# Intentionally unpinned base image — Trivy will flag OS-level CVEs.
+# In production, pin to a specific digest: python:3.11.9-slim@sha256:...
+FROM python:3.11
+
+LABEL maintainer="SamTruss"
+LABEL description="Intentionally vulnerable demo app — DO NOT DEPLOY"
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ .
+
+EXPOSE 5000
+
+# Intentional: running as root (Trivy / Dockerfile lint will flag this)
+CMD ["python", "server.py"]
