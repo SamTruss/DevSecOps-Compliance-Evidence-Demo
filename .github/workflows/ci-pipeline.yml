@@ -42,12 +42,11 @@ jobs:
         continue-on-error: true
         run: |
           safety check --json --output ${{ env.EVIDENCE_DIR }}/dependency-scan.json || true
-
+      
       - name: Generate SBOM (CycloneDX)
         run: |
-          cat requirements.txt | cyclonedx-py requirements - \
-            -o ${{ env.EVIDENCE_DIR }}/sbom.json \
-            --of JSON
+          cyclonedx-bom -o ${{ env.EVIDENCE_DIR }}/scheduled-sbom.json \
+            -F json requirements.txt
 
       # ── Stage 2: SAST (Static Analysis) ──────────────────────────
       - name: Run SAST scan (Bandit)
