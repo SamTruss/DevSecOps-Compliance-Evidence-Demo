@@ -43,10 +43,9 @@ jobs:
         run: |
           safety check --json > ${{ env.EVIDENCE_DIR }}/dependency-scan.json || true
 
-        - name: Generate SBOM (CycloneDX)
-          run: |
-            pip install pip-audit
-            pip-audit --desc --format json > ${{ env.EVIDENCE_DIR }}/sbom.json || true
+      - name: Generate SBOM (Dependency List)
+      run: |
+        pip freeze > ${{ env.EVIDENCE_DIR }}/sbom.json
             
       # ── Stage 2: SAST (Static Analysis) ──────────────────────────
       - name: Run SAST scan (Bandit)
